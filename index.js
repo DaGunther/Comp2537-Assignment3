@@ -4,13 +4,21 @@ let pokemons = []
 let filteredPokemons = []
 
 const loadPokemonTypes = async () => {
-  const res = await axios.get('https://pokeapi.co/api/v2/type');
-  const types = res.data.results;
-
-  types.forEach((type) => {
-    $('#filterType').append(`<option value="${type.name}">${type.name}</option>`);
-  });
-}
+    const res = await axios.get('https://pokeapi.co/api/v2/type');
+    const types = res.data.results;
+  
+    types.forEach((type) => {
+      $('#filterType').append(`
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" value="${type.name}" id="${type.name}">
+          <label class="form-check-label" for="${type.name}">
+            ${type.name}
+          </label>
+        </div>
+      `);
+    });
+  }
+  
 
 const updatePaginationDiv = (currentPage, numPages) => {
     $('#pagination').empty()
@@ -59,22 +67,28 @@ const updatePaginationDiv = (currentPage, numPages) => {
 }
   
 
-const filterByType = (type) => {
-    currentPage = 1; // reset currentPage when changing filter
+const filterByType = () => {
+    const types = [];
+    $('#filterType input[type=checkbox]:checked').each(function() {
+      types.push($(this).val());
+    });
   
-    if (type !== 'all') {
-      filteredPokemons = pokemons.filter(pokemon => pokemon.types.some(t => t.type.name === type));
+    if (types.length > 0) {
+      filteredPokemons = pokemons.filter(pokemon => 
+        types.every(type => pokemon.types.some(t => t.type.name === type))
+      );
     } else {
       filteredPokemons = pokemons;
     }
   
+    currentPage = 1; // reset to first page
     paginate(currentPage, PAGE_SIZE, filteredPokemons);
     const numPages = Math.ceil(filteredPokemons.length / PAGE_SIZE);
     updatePaginationDiv(currentPage, numPages);
-  
-    // Update the total count of pokemons
     updatePokemonCount(pokemons.length, filteredPokemons.length);
   }
+  
+  
 
   const updatePokemonCount = (totalPokemons, displayedPokemons) => {
     $('#pokemonCount').html(`Displaying ${displayedPokemons} out of ${totalPokemons}`);
